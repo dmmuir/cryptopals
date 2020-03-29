@@ -208,6 +208,13 @@ pub mod base64 {
     }
 }
 
+pub mod xor {
+    #[allow(dead_code)]
+    pub fn fixed_xor(a: &[u8], b: &[u8]) -> Vec<u8> {
+        a.iter().zip(b.iter()).map(|(a, b)| a ^ b).collect()
+    }
+}
+
 #[cfg(test)]
 mod set1 {
     use super::*;
@@ -222,6 +229,20 @@ mod set1 {
                 b"SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t".to_vec();
 
             assert_eq!(base64_str, base64::encode(&from_hex_bytes))
+        }
+    }
+
+    mod challenge2 {
+        use super::*;
+
+        #[test]
+        fn xor_two_buffers() {
+            let a = hex::decode(b"1c0111001f010100061a024b53535009181c");
+            let b = hex::decode(b"686974207468652062756c6c277320657965");
+            let expected = b"746865206b696420646f6e277420706c6179".to_vec();
+
+            let actual = xor::fixed_xor(&a, &b);
+            assert_eq!(expected, hex::encode(&actual))
         }
     }
 }
