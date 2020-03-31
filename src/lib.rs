@@ -246,6 +246,17 @@ pub mod xor {
         move |slice: &[u8]| slice.iter().map(|byte| byte ^ key).collect()
     }
 
+    pub fn repeating_key_xor(key: &[u8]) -> impl Fn(&[u8]) -> Vec<u8> {
+        let key = key.to_owned();
+        move |slice: &[u8]| {
+            key.iter()
+                .cycle()
+                .zip(slice.iter())
+                .map(|(key, byte)| key ^ byte)
+                .collect()
+        }
+    }
+
     pub fn decrypt_single_byte_xor(slice: &[u8]) -> Option<(i32, u8, Vec<u8>)> {
         use super::heuristics::byte_frequency;
 
@@ -404,6 +415,29 @@ mod set1 {
                 String::from("Now that the party is jumping"),
                 String::from_utf8(actual.to_owned()).unwrap()
             )
+        }
+    }
+
+    mod challenge5 {
+        use super::*;
+
+        #[test]
+        fn repeating_key_xor() {
+            let message =
+                "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal";
+            let key = b"ICE";
+            let expected = [
+                b"0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272"
+                    .to_vec(),
+                b"a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
+                    .to_vec(),
+            ]
+            .concat();
+
+            let encrypt = xor::repeating_key_xor(key);
+            let secret = encrypt(message.as_bytes());
+
+            assert_eq!(expected, hex::encode(&secret))
         }
     }
 }

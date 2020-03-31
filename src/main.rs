@@ -29,8 +29,24 @@ fn main() {
 
     println!(
         "Set 1 - Challenge 4: {}",
-        String::from_utf8(detect_single_character_xor("./challenge-data/4.txt").2).unwrap().trim(),
+        String::from_utf8(detect_single_character_xor("./challenge-data/4.txt").2)
+            .unwrap()
+            .trim(),
     );
+
+    println!(
+        "Set 1 - Challenge 5:\n{}",
+        String::from_utf8(xor::repeating_key_xor(b"ICE")(&hex::decode(
+            &[
+                b"0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272"
+                    .to_vec(),
+                b"a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
+                    .to_vec(),
+            ]
+            .concat()
+        )))
+        .unwrap()
+    )
 }
 
 fn detect_single_character_xor(path: &str) -> (usize, u8, Vec<u8>) {
