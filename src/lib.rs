@@ -135,21 +135,22 @@ pub mod base64 {
 
     #[allow(dead_code)]
     pub fn decode(bytes: &[u8]) -> Vec<u8> {
+        #[rustfmt::skip]
         fn de_base64(byte: u8) -> u8 {
-            [
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 64, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 62, 66, 66, 66, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 66, 66, 66, 65, 66,
-                66, 66, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-                21, 22, 23, 24, 25, 66, 66, 66, 66, 66, 66, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-                36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66,
-                66, 66,
+            [//  0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16  17  18  19  20
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 64, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, //  1
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, //  2
+                66, 62, 66, 66, 66, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 66, 66, 66, 65, 66, //  3
+                66, 66, 00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, //  4
+                19, 20, 21, 22, 23, 24, 25, 66, 66, 66, 66, 66, 66, 26, 27, 28, 29, 30, 31, 32, 33, //  5
+                34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 66, 66, 66, //  6
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, //  7
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, //  8
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, //  9
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, // 10
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, // 11
+                66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, 66, // 12
+                66, 66, 66, 66                                                                      // 13
             ][byte as usize]
         }
 
@@ -176,8 +177,7 @@ pub mod base64 {
             .sum()
         }
 
-        let bytes = padding_to_zero(bytes);
-        bytes
+        padding_to_zero(bytes)
             .chunks(4)
             .flat_map(|b| {
                 let n = pack_24_bit_bytes(b);
@@ -242,13 +242,11 @@ pub mod xor {
         a.iter().zip(b.iter()).map(|(a, b)| a ^ b).collect()
     }
 
-    #[allow(dead_code)]
     pub fn single_byte_xor(key: u8) -> impl Fn(&[u8]) -> Vec<u8> {
         move |slice: &[u8]| slice.iter().map(|byte| byte ^ key).collect()
     }
 
-    #[allow(dead_code)]
-    pub fn decrypt_single_byte_xor(slice: &[u8]) -> Option<(Vec<u8>, u8)> {
+    pub fn decrypt_single_byte_xor(slice: &[u8]) -> Option<(i32, u8, Vec<u8>)> {
         use super::heuristics::byte_frequency;
 
         (0..127) // Assuming the key is only within the ascii range
@@ -256,10 +254,20 @@ pub mod xor {
                 let decrypted_slice: Vec<u8> = single_byte_xor(key)(slice);
                 let score = byte_frequency(&decrypted_slice);
 
-                (decrypted_slice, (key, score))
+                ((key, score), decrypted_slice)
             })
-            .max_by_key(|(_slice, (_key, score))| *score)
-            .map(|(decrypted_slice, (key, _score))| (decrypted_slice, key))
+            .max_by_key(|((_key, score), _slice)| *score)
+            .map(|((key, score), decrypted_slice)| (score, key, decrypted_slice))
+    }
+
+    pub fn find_single_byte_xor_lines(lines: &[Vec<u8>]) -> Vec<(usize, (i32, u8, Vec<u8>))> {
+        lines
+            .into_iter()
+            .enumerate()
+            .map(|(index, slice)| (index, decrypt_single_byte_xor(slice)))
+            .filter(|(_index, option)| option.is_some())
+            .map(|(index, option)| (index, option.unwrap()))
+            .collect()
     }
 
     #[cfg(test)]
@@ -375,11 +383,26 @@ mod set1 {
             let slice = hex::decode(
                 b"1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736",
             );
-            let (actual, _likely_byte) = xor::decrypt_single_byte_xor(&slice).unwrap();
+            let (_score, _key, actual) = xor::decrypt_single_byte_xor(&slice).unwrap();
 
             assert_eq!(
                 String::from("Cooking MC's like a pound of bacon"),
                 String::from_utf8(actual).unwrap()
+            )
+        }
+    }
+
+    mod challenge4 {
+        use super::*;
+
+        #[test]
+        fn detect_single_character_xor() {
+            let slice = hex::decode(b"7b5a4215415d544115415d5015455447414c155c46155f4058455c5b52");
+            let (_index, (_score, _key, actual)) = &xor::find_single_byte_xor_lines(&[slice])[0];
+
+            assert_eq!(
+                String::from("Now that the party is jumping"),
+                String::from_utf8(actual.to_owned()).unwrap()
             )
         }
     }

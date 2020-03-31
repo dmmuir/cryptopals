@@ -22,8 +22,30 @@ fn main() {
                 ) // decode hex code to byte slice
             ) // decrypt single byte xor
             .unwrap() // unwrap option
-            .0 // read decrypted slice only
+            .2 // read decrypted slice only
         )
         .unwrap(),
-    )
+    );
+
+    println!(
+        "Set 1 - Challenge 4: {}",
+        String::from_utf8(detect_single_character_xor("./challenge-data/4.txt").2).unwrap().trim(),
+    );
+}
+
+fn detect_single_character_xor(path: &str) -> (usize, u8, Vec<u8>) {
+    use std::io::BufRead;
+
+    let f = std::fs::File::open(path).unwrap();
+    let lines: Vec<Vec<u8>> = std::io::BufReader::new(f)
+        .lines()
+        .filter_map(|result| result.ok())
+        .map(|line| hex::decode(line.as_bytes()))
+        .collect();
+
+    xor::find_single_byte_xor_lines(&lines)
+        .iter()
+        .max_by_key(|(_index, (score, _key, _text))| *score)
+        .map(|(index, (_score, key, text))| (*index, *key, text.to_vec()))
+        .unwrap()
 }
