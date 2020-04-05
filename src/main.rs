@@ -1,5 +1,6 @@
 mod lib;
 
+use lib::base64;
 use lib::hex;
 use lib::xor;
 
@@ -46,22 +47,65 @@ fn main() {
             .concat()
         )))
         .unwrap()
+    );
+
+    println!(
+        "Set 1 - Challenge 6: {}\n{}",
+        String::from_utf8(find_key("./challenge-data/6.txt")).unwrap(),
+        String::from_utf8(break_repeating_key_xor("./challenge-data/6.txt")).unwrap(),
     )
 }
 
 fn detect_single_character_xor(path: &str) -> (usize, u8, Vec<u8>) {
-    use std::io::BufRead;
-
-    let f = std::fs::File::open(path).unwrap();
-    let lines: Vec<Vec<u8>> = std::io::BufReader::new(f)
-        .lines()
-        .filter_map(|result| result.ok())
-        .map(|line| hex::decode(line.as_bytes()))
-        .collect();
+    let hex_decoder = |line: String| hex::decode(line.as_bytes());
+    let lines = file_read(path, hex_decoder);
 
     xor::find_single_byte_xor_lines(&lines)
         .iter()
         .max_by_key(|(_index, (score, _key, _text))| *score)
         .map(|(index, (_score, key, text))| (*index, *key, text.to_vec()))
         .unwrap()
+}
+
+fn find_key(path: &str) -> Vec<u8> {
+    let base64_decoder = |file: String| base64::decode(file.as_bytes());
+    let message: Vec<u8> = file_read_string(path, base64_decoder);
+
+    xor::find_key(&message)
+}
+
+fn break_repeating_key_xor(path: &str) -> Vec<u8> {
+    let base64_decoder = |file: String| base64::decode(file.as_bytes());
+    let message: Vec<u8> = file_read_string(path, base64_decoder);
+
+    xor::decrypt_repeating_key_xor(&message)
+}
+
+fn file_read<F>(path: &str, decoder: F) -> Vec<Vec<u8>>
+where
+    F: Fn(String) -> Vec<u8>,
+{
+    use std::io::BufRead;
+
+    let file = std::fs::File::open(path).unwrap();
+    std::io::BufReader::new(file)
+        .lines()
+        .filter_map(|result| result.ok())
+        .map(decoder)
+        .collect()
+}
+
+fn file_read_string<F>(path: &str, decoder: F) -> Vec<u8>
+where
+    F: Fn(String) -> Vec<u8>,
+{
+    use std::io::BufRead;
+
+    let file = std::fs::File::open(path).unwrap();
+    let file: String = std::io::BufReader::new(file)
+        .lines()
+        .filter_map(|result| result.ok())
+        .collect();
+
+    decoder(file)
 }
