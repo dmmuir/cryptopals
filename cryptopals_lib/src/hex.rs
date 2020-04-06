@@ -1,13 +1,29 @@
-#[allow(dead_code)]
+const HEX_CHARS: &'static [u8] = b"0123456789abcdef";
+
 pub fn encode(bytes: &[u8]) -> Vec<u8> {
+    let encoder = encode_with(bytes.len());
+    encoder(bytes)
+}
+
+pub fn encode_with(buffer_len: usize) -> impl Fn(&[u8]) -> Vec<u8> {
     fn hex(byte: u8) -> u8 {
-        b"0123456789abcdef"[byte as usize]
+        HEX_CHARS[byte as usize]
     }
 
-    bytes
-        .iter()
-        .flat_map(|byte| vec![(hex((*byte >> 4) & 0xf)), (hex(*byte & 0xf))])
-        .collect()
+    fn allocate_buffer(len: usize) -> Vec<u8> {
+        Vec::with_capacity(len * 2)
+    }
+
+    move |bytes| -> Vec<u8> {
+        let mut buffer = allocate_buffer(buffer_len);
+        let split_bytes = |byte: &u8| {
+            buffer.push(hex((*byte >> 4) & 0xf));
+            buffer.push(hex(*byte & 0xf));
+        };
+
+        bytes.iter().for_each(split_bytes);
+        buffer
+    }
 }
 
 pub fn decode(bytes: &[u8]) -> Vec<u8> {
@@ -19,7 +35,7 @@ pub fn decode(bytes: &[u8]) -> Vec<u8> {
     }
 
     bytes
-        .chunks_exact(2) // Issue: chunks_exact will drop the last byte if the hex string is odd number in length
+        .chunks(2)
         .map(|b| {
             let b1 = de_hex(b[0]);
             let b2 = de_hex(b[1]);
