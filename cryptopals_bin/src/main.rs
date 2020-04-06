@@ -1,4 +1,4 @@
-mod lib;
+extern crate cryptopals_lib as lib;
 
 use lib::base64;
 use lib::cipher;
@@ -7,7 +7,7 @@ use lib::xor;
 
 fn main() {
     println!(
-        "Set 1 - Challenge 1: {}", 
+        "Set 1 - Challenge 1: {}",
         String::from_utf8(hex::decode(b"49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")).unwrap()
     );
     println!(
@@ -57,7 +57,7 @@ fn main() {
     );
 
     println!("Set 1 - Challenge 7: YELLOW SUBMARINE\n{}", decrypt_aes_128_in_ecb_mode());
-    
+
     println!("Set 1 - Challenge 8: {}", detect_ecb_mode_encryption());
 }
 

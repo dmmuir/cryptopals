@@ -1,0 +1,10 @@
+[package]
+name = "cryptopals_bin"
+version = "0.1.0"
+authors = ["Dan Muir <danthemanmuir@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cryptopals_lib = { path = "../cryptopals_lib" }
