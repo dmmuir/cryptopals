@@ -494,19 +494,31 @@ pub mod xor {
 // TODO: Module needs a better name
 pub mod heuristics {
     use std::collections::HashMap;
+    use std::hash::Hash;
 
-    pub fn byte_frequency(slice: &[u8]) -> HashMap<u8, f32> {
+    pub fn byte_frequency(slice: &[u8]) -> HashMap<&u8, f32> {
+        occurance_count(slice)
+    }
+
+    pub fn contain_duplicates(slice: &[Vec<u8>]) -> bool {
+        occurance_count(slice).iter().any(|(_key, value)| *value > 1.0)
+    }
+
+    fn occurance_count<T>(slice: &[T]) -> HashMap<&T, f32> 
+    where 
+    T: Hash + Eq,
+    {
         let mut hit_records = HashMap::new();
 
-        slice.iter().for_each(|b| {
-            let counter = hit_records.entry(*b).or_insert(0.0);
+        slice.into_iter().for_each(|item| {
+            let counter = hit_records.entry(item).or_insert(0.0f32);
             *counter += 1.0;
         });
 
         hit_records
     }
 
-    pub fn weights() -> impl Fn(HashMap<u8, f32>) -> i32 {
+    pub fn weights() -> impl Fn(HashMap<&u8, f32>) -> i32 {
         let weights: HashMap<u8, f32> = vec![
             (b'a', 1.08167),
             (b'b', 1.01482),
@@ -610,111 +622,111 @@ pub mod heuristics {
 
             assert_eq!(
                 108i32,
-                weight_scores(vec![(b'a', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'a', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 101i32,
-                weight_scores(vec![(b'b', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'b', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 103i32,
-                weight_scores(vec![(b'c', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'c', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 104i32,
-                weight_scores(vec![(b'd', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'd', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 113i32,
-                weight_scores(vec![(b'e', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'e', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 102i32,
-                weight_scores(vec![(b'f', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'f', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 102i32,
-                weight_scores(vec![(b'g', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'g', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 106i32,
-                weight_scores(vec![(b'h', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'h', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 106i32,
-                weight_scores(vec![(b'i', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'i', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 100i32,
-                weight_scores(vec![(b'j', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'j', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 101i32,
-                weight_scores(vec![(b'k', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'k', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 104i32,
-                weight_scores(vec![(b'l', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'l', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 102i32,
-                weight_scores(vec![(b'm', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'm', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 107i32,
-                weight_scores(vec![(b'n', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'n', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 108i32,
-                weight_scores(vec![(b'o', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'o', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 102i32,
-                weight_scores(vec![(b'p', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'p', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 100i32,
-                weight_scores(vec![(b'q', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'q', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 106i32,
-                weight_scores(vec![(b'r', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'r', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 106i32,
-                weight_scores(vec![(b's', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b's', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 109i32,
-                weight_scores(vec![(b't', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b't', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 103i32,
-                weight_scores(vec![(b'u', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'u', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 101i32,
-                weight_scores(vec![(b'v', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'v', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 102i32,
-                weight_scores(vec![(b'w', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'w', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 100i32,
-                weight_scores(vec![(b'x', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'x', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 102i32,
-                weight_scores(vec![(b'y', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'y', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 100i32,
-                weight_scores(vec![(b'z', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b'z', 1.0f32)].into_iter().collect())
             );
             assert_eq!(
                 113i32,
-                weight_scores(vec![(b' ', 1.0f32)].into_iter().collect())
+                weight_scores(vec![(&b' ', 1.0f32)].into_iter().collect())
             );
         }
 
@@ -795,7 +807,7 @@ pub mod blocks {
             self.chunk_slice().into_iter()
         }
 
-        fn chunk_slice(&self) -> Vec<Vec<u8>> {
+        pub fn chunk_slice(&self) -> Vec<Vec<u8>> {
             let (n, _) = self.n_m;
             self.slice
                 .chunks(n)
@@ -969,6 +981,29 @@ pub mod blocks {
 
             assert_eq!(a_t, a_blocks.chunk_slice());
         }
+    }
+}
+
+pub mod cipher {
+    use super::heuristics::contain_duplicates;
+    use super::blocks::Blocks;
+
+    pub fn ecb_mode_decrypt(data: &[u8], key: &[u8]) -> Vec<u8> {
+        use openssl::symm::{decrypt, Cipher};
+        let cipher = Cipher::aes_128_ecb();
+
+        decrypt(cipher, key, None, &data)
+            .expect("Failed to decrypt ecb mode encryption with specified key")
+    }
+
+    pub fn detect_ecb_mode_encryption(data: &[Vec<u8>]) -> Vec<(usize, Vec<u8>)> {
+        data.iter().enumerate()
+        .filter(|(_index, line)| {
+            let blocks = Blocks::from(16, line);
+            let blocks = blocks.chunk_slice();
+            contain_duplicates(&blocks)
+        }).map(|(index, line)| (index, line.to_owned()))
+        .collect()
     }
 }
 

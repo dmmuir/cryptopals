@@ -1,6 +1,7 @@
 mod lib;
 
 use lib::base64;
+use lib::cipher;
 use lib::hex;
 use lib::xor;
 
@@ -53,7 +54,11 @@ fn main() {
         "Set 1 - Challenge 6: {}\n{}",
         String::from_utf8(find_key("./challenge-data/6.txt")).unwrap(),
         String::from_utf8(break_repeating_key_xor("./challenge-data/6.txt")).unwrap(),
-    )
+    );
+
+    println!("Set 1 - Challenge 7: YELLOW SUBMARINE\n{}", decrypt_aes_128_in_ecb_mode());
+    
+    println!("Set 1 - Challenge 8: {}", detect_ecb_mode_encryption());
 }
 
 fn detect_single_character_xor(path: &str) -> (usize, u8, Vec<u8>) {
@@ -79,6 +84,30 @@ fn break_repeating_key_xor(path: &str) -> Vec<u8> {
     let message: Vec<u8> = file_read_string(path, base64_decoder);
 
     xor::decrypt_repeating_key_xor(&message)
+}
+
+fn decrypt_aes_128_in_ecb_mode() -> String {
+    let base64_decoder = |file: String| base64::decode(file.as_bytes());
+    let data = file_read_string("./challenge-data/7.txt", base64_decoder);
+    let key = b"YELLOW SUBMARINE";
+    let message = cipher::ecb_mode_decrypt(&data, key);
+
+    String::from_utf8(message).unwrap()
+}
+
+fn detect_ecb_mode_encryption() -> String {
+    let hex_decoder = |file: String| hex::decode(file.as_bytes());
+    let lines = file_read("./challenge-data/8.txt", hex_decoder);
+    let hits = cipher::detect_ecb_mode_encryption(&lines);
+
+    let mut messages = String::new();
+    for (line_number, line) in hits {
+        // let secret = String::from_utf8(cipher::ecb_mode_decrypt(&line,  b"YELLOW SUBMARINE")).unwrap();
+        // messages = format!("{}{}, ", line_number, secret)
+        messages = format!("{}{}, ", messages, line_number)
+    }
+
+    messages[..messages.len()-2].to_string()
 }
 
 fn file_read<F>(path: &str, decoder: F) -> Vec<Vec<u8>>
