@@ -3,6 +3,10 @@ const BASE64_TABLE: &'static [u8] =
 
 #[allow(dead_code)]
 pub fn encode(bytes: &[u8]) -> Vec<u8> {
+    if bytes.is_empty() {
+        return vec![];
+    }
+
     fn base64(byte: u8) -> u8 {
         BASE64_TABLE[byte as usize]
     }
@@ -23,44 +27,33 @@ pub fn encode(bytes: &[u8]) -> Vec<u8> {
         [n0, n1, n2, n3]
     }
 
-    if bytes.is_empty() {
-        return vec![];
-    }
     let mod_table = [0, 2, 1];
-    let pad_size = bytes.len() % 3;
-    let buffer_size = 4 * (bytes.len() + mod_table[pad_size]) / 3;
-    let mut buffer = vec![0; buffer_size];
+    let pad_size = mod_table[bytes.len() % 3];
+    let buffer_size = 4 * (bytes.len() / 3 + 1);
+    let mut buffer = Vec::with_capacity(buffer_size);
 
     bytes
         .chunks(3)
         .map(|byte_chunk| split_6_bits_bytes_from(pack_24_bit_bytes(byte_chunk)))
-        .enumerate()
-        .for_each(|(i, b)| {
-            let x = i * 4;
-            buffer[x] = base64(b[0]);
-
-            if let Some(byte) = buffer.get_mut(x + 1) {
-                *byte = base64(b[1]);
-            }
-            if let Some(byte) = buffer.get_mut(x + 2) {
-                *byte = base64(b[2]);
-            }
-            if let Some(byte) = buffer.get_mut(x + 3) {
-                *byte = base64(b[3]);
-            }
+        .for_each(|b| {
+            b.iter().for_each(|byte| buffer.push(base64(*byte)));
         });
 
-    (0..mod_table[pad_size]).for_each(|i| {
-        if let Some(b) = buffer.get_mut(buffer_size - 1 - i) {
-            *b = b'=';
-        }
-    });
+    match pad_size {
+        1 => [b'='].swap_with_slice(&mut buffer[buffer_size - 1..]),
+        2 => [b'=', b'='].swap_with_slice(&mut buffer[buffer_size - 2..]),
+        _ => (),
+    }
 
     buffer
 }
 
 #[allow(dead_code)]
 pub fn decode(bytes: &[u8]) -> Vec<u8> {
+    if bytes.is_empty() {
+        return vec![];
+    }
+
     #[rustfmt::skip]
         fn de_base64(byte: u8) -> u8 {
             // base64 -> decimal lookup table. 
@@ -82,46 +75,40 @@ pub fn decode(bytes: &[u8]) -> Vec<u8> {
         }
 
     fn padding_to_zero(bytes: &[u8]) -> Vec<u8> {
-        let mut bytes_mut = bytes.to_vec();
-        let mut rev_bytes = bytes.iter().enumerate().rev();
-        while let Some((i, b'=')) = rev_bytes.next() {
-            if let Some(b) = bytes_mut.get_mut(i) {
-                *b = b'A';
-            }
+        let len = bytes.len();
+        let mut bytes = bytes.to_vec();
+
+        if bytes.ends_with(b"==") {
+            [b'A', b'A'].swap_with_slice(&mut bytes[len - 2..]);
+        } else if bytes.ends_with(b"=") {
+            [b'A'].swap_with_slice(&mut bytes[len - 1..]);
         }
 
-        bytes_mut
+        bytes
     }
 
     fn pack_24_bit_bytes(byte_chunk: &[u8]) -> u32 {
-        vec![
-            (de_base64(byte_chunk[0]) as u32) << 18,
-            (de_base64(byte_chunk[1]) as u32) << 12,
-            (de_base64(byte_chunk[2]) as u32) << 6,
-            de_base64(byte_chunk[3]) as u32,
-        ]
-        .into_iter()
-        .sum()
+        byte_chunk
+            .iter()
+            .enumerate()
+            .map(|(i, byte)| (de_base64(*byte) as u32) << (18 - (i * 6)))
+            .sum()
     }
 
-    let mut buffer: Vec<u8> = padding_to_zero(bytes)
-        .chunks(4)
-        .flat_map(|b| {
-            let n = pack_24_bit_bytes(b);
+    let buffer_size = 3 * bytes.len() / 4 + 1;
+    let mut buffer: Vec<u8> = Vec::with_capacity(buffer_size);
 
-            vec![
-                ((n >> 16u8) & 255) as u8,
-                ((n >> 8) & 255) as u8,
-                (n & 255) as u8,
-            ]
-        })
-        .collect();
+    padding_to_zero(bytes).chunks(4).for_each(|b| {
+        let n = pack_24_bit_bytes(b);
 
-    while let Some(byte) = buffer.pop() {
-        if byte != 0 {
-            buffer.push(byte);
-            break;
-        }
+        buffer.push(((n >> 16u8) & 255) as u8);
+        buffer.push(((n >> 8) & 255) as u8);
+        buffer.push((n & 255) as u8);
+    });
+
+    // Really? A valid binary will never end with a null character? I don't know bout dat...
+    while buffer.ends_with(&[0]) {
+        buffer.pop();
     }
 
     buffer

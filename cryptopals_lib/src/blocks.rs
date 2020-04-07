@@ -4,7 +4,7 @@ pub struct Blocks {
     n_m: (usize, usize),
     padding_length: usize,
     slice: Vec<u8>,
-    state: States
+    state: States,
 }
 
 enum States {
@@ -18,7 +18,12 @@ impl Blocks {
         let padding_length = calculate_padding_size(block_size, slice.len());
         let n_m = calculate_dimensions(block_size, slice.len());
 
-        Self { slice, n_m, padding_length, state: States::ORIGINAL }
+        Self {
+            slice,
+            n_m,
+            padding_length,
+            state: States::ORIGINAL,
+        }
     }
 
     #[allow(dead_code)]
@@ -47,21 +52,18 @@ impl Blocks {
             .chunks(n)
             .into_iter()
             .enumerate()
-            .map(|(index, chunk)| {
-                match self.state {
-                    States::ORIGINAL => chunk.to_owned(),
-                    States::TRANSPOSED => self.remove_padding(index, chunk),
-                }
+            .map(|(index, chunk)| match self.state {
+                States::ORIGINAL => chunk.to_owned(),
+                States::TRANSPOSED => self.remove_padding(index, chunk),
             })
             .collect()
-        }
-        
+    }
+
     fn remove_padding(&self, index: usize, block: &[u8]) -> Vec<u8> {
         let mut block = block.to_owned();
         let (_row_len, row_count) = self.n_m;
 
         if self.padding_length != 0 {
-    
             if index >= row_count - self.padding_length {
                 block.pop();
             }
@@ -75,7 +77,7 @@ fn calculate_padding_size(block_size: usize, length: usize) -> usize {
     let remainder = length % block_size;
 
     if remainder != 0 {
-        return block_size - length % block_size
+        return block_size - length % block_size;
     }
 
     0
@@ -87,7 +89,6 @@ fn calculate_dimensions(block_size: usize, length: usize) -> (usize, usize) {
 
     (n, m)
 }
-
 
 #[cfg(test)]
 mod test {
