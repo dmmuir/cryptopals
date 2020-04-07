@@ -2,16 +2,23 @@ use std::vec::IntoIter;
 
 pub struct Blocks {
     n_m: (usize, usize),
+    padding_length: usize,
     slice: Vec<u8>,
+    state: States
+}
+
+enum States {
+    ORIGINAL,
+    TRANSPOSED,
 }
 
 impl Blocks {
     pub fn from(block_size: usize, slice: &[u8]) -> Self {
         let slice = slice.to_vec();
-        let n = block_size;
-        let m = slice.len() / n + if slice.len() % n != 0 { 1 } else { 0 };
+        let padding_length = calculate_padding_size(block_size, slice.len());
+        let n_m = calculate_dimensions(block_size, slice.len());
 
-        Self { slice, n_m: (n, m) }
+        Self { slice, n_m, padding_length, state: States::ORIGINAL }
     }
 
     #[allow(dead_code)]
@@ -27,6 +34,7 @@ impl Blocks {
         }
         self.slice = new_blocks;
         self.n_m = (m, n);
+        self.state = States::TRANSPOSED
     }
 
     pub fn into_iter(&self) -> IntoIter<Vec<u8>> {
@@ -38,16 +46,48 @@ impl Blocks {
         self.slice
             .chunks(n)
             .into_iter()
-            .map(|chunk| {
-                chunk
-                    .into_iter()
-                    .filter(|b| b != &&255) //This could be a problem later. 255 should be a valid entry.
-                    .map(|b| *b)
-                    .collect()
+            .enumerate()
+            .map(|(index, chunk)| {
+                match self.state {
+                    States::ORIGINAL => chunk.to_owned(),
+                    States::TRANSPOSED => self.remove_padding(index, chunk),
+                }
             })
             .collect()
+        }
+        
+    fn remove_padding(&self, index: usize, block: &[u8]) -> Vec<u8> {
+        let mut block = block.to_owned();
+        let (_row_len, row_count) = self.n_m;
+
+        if self.padding_length != 0 {
+    
+            if index >= row_count - self.padding_length {
+                block.pop();
+            }
+        }
+
+        block
     }
 }
+
+fn calculate_padding_size(block_size: usize, length: usize) -> usize {
+    let remainder = length % block_size;
+
+    if remainder != 0 {
+        return block_size - length % block_size
+    }
+
+    0
+}
+
+fn calculate_dimensions(block_size: usize, length: usize) -> (usize, usize) {
+    let n = block_size;
+    let m = length / n + if length % n != 0 { 1 } else { 0 };
+
+    (n, m)
+}
+
 
 #[cfg(test)]
 mod test {
@@ -237,6 +277,30 @@ mod test {
                     vec![2, 6],
                     vec![3, 7],
                     vec![4, 8]
+            ];
+
+            assert_eq!(a_t, a_blocks.chunk_slice());
+        }
+
+        #[test]
+        fn with_valid_255_value() {
+            let a: Vec<u8> = vec![
+                vec![01, 255, 03, 04], 
+                vec![05, 006, 07, 08], 
+                vec![09],
+                ]
+                .into_iter()
+                .flatten()
+                .collect();
+                
+                let mut a_blocks = Blocks::from(4, &a);
+                a_blocks.transpose();
+                
+                let a_t = vec![
+                    vec![001, 5, 9],
+                    vec![255, 6],
+                    vec![003, 7],
+                    vec![004, 8]
             ];
 
             assert_eq!(a_t, a_blocks.chunk_slice());
