@@ -15,7 +15,7 @@ enum States {
 impl Blocks {
     pub fn from(block_size: usize, slice: &[u8]) -> Self {
         let slice = slice.to_vec();
-        let padding_length = calculate_padding_size(block_size, slice.len());
+        let padding_length = calculate_padding_length(block_size, slice.len());
         let n_m = calculate_dimensions(block_size, slice.len());
 
         Self {
@@ -26,7 +26,15 @@ impl Blocks {
         }
     }
 
-    #[allow(dead_code)]
+    pub fn with_padding_from(block_size: usize, slice: &[u8]) -> Self {
+        let pad_char = 4u8;
+        let padding_length = calculate_padding_length(block_size, slice.len());
+        let padded_slice = vec![pad_char; padding_length];
+        let padded_slice = [slice, &padded_slice].concat();
+
+        Self::from(block_size, &padded_slice)
+    }
+
     pub fn transpose(&mut self) {
         let (n, m) = self.n_m;
 
@@ -73,7 +81,7 @@ impl Blocks {
     }
 }
 
-fn calculate_padding_size(block_size: usize, length: usize) -> usize {
+fn calculate_padding_length(block_size: usize, length: usize) -> usize {
     let remainder = length % block_size;
 
     if remainder != 0 {

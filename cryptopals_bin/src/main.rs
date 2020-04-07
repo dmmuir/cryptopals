@@ -1,6 +1,7 @@
 extern crate cryptopals_lib as lib;
 
 use lib::base64;
+use lib::blocks;
 use lib::cipher;
 use lib::hex;
 use lib::xor;
@@ -21,6 +22,8 @@ fn main() {
     println!("Set 1 - Challenge 7: {}", decrypt_aes_128_in_ecb_mode());
 
     println!("Set 1 - Challenge 8: {}", detect_ecb_mode_encryption());
+    
+    println!("Set 2 - Challenge 9: {}", pad_yellow_submarine());
 }
 
 fn hex_decode_secret() -> String {
@@ -88,6 +91,14 @@ fn detect_ecb_mode_encryption() -> String {
     }
 
     String::new()
+}
+
+fn pad_yellow_submarine() -> String {
+    let slice = b"YELLOW SUBMARINE";
+    let blocks = blocks::Blocks::with_padding_from(20, slice);
+    let padded_bytes: Vec<u8> = blocks.into_iter().flatten().collect();
+
+    String::from_utf8(padded_bytes).unwrap()
 }
 
 fn hex_decode(bytes: &[u8]) -> String {

@@ -132,3 +132,23 @@ mod set1 {
         }
     }
 }
+
+#[cfg(test)]
+mod set2 {
+    use super::*;
+    
+    mod challenge9 {
+        use super::*;
+
+        #[test]
+        fn implement_pkcs7_padding() {
+            let slice = b"YELLOW SUBMARINE";
+            let expected_padding = b"YELLOW SUBMARINE\x04\x04\x04\x04";
+
+            let blocks = blocks::Blocks::with_padding_from(20, slice);
+            let actual_padding: Vec<u8> = blocks.into_iter().flatten().collect();
+
+            assert_eq!(expected_padding.to_vec(), actual_padding);
+        }
+    }
+}
