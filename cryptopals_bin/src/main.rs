@@ -35,7 +35,7 @@ fn _decrypt_single_byte_xor() -> String {
     let bytes =
         &hex::decode(b"1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"); // decode hex code to byte slice
 
-    let secret = xor::decrypt_single_byte_xor(bytes).unwrap().2; // read decrypted slice only
+    let secret = xor::decrypt_single_byte_xor(bytes); // read decrypted slice only
     String::from_utf8(secret).unwrap()
 }
 
@@ -44,12 +44,8 @@ fn detect_single_character_xor() -> String {
     let hex_decoder = |line: String| hex::decode(line.as_bytes());
     let lines = file_read(path, hex_decoder);
 
-    let secret = xor::find_single_byte_xor_lines(&lines)
-        .iter()
-        .max_by_key(|(_index, (score, _key, _text))| *score)
-        .map(|(index, (_score, key, text))| (*index, *key, text.to_vec()))
-        .unwrap()
-        .2;
+    let (index, key) = xor::detect_single_byte_xor_line(&lines);
+    let secret = xor::single_byte_xor(key)(&lines[index]);
 
     String::from_utf8(secret).unwrap().trim().to_string()
 }

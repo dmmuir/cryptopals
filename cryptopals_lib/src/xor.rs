@@ -21,15 +21,31 @@ pub fn repeating_key_xor(key: &[u8]) -> impl Fn(&[u8]) -> Vec<u8> {
     }
 }
 
-pub fn decrypt_single_byte_xor(slice: &[u8]) -> Option<(i32, u8, Vec<u8>)> {
+pub fn decrypt_single_byte_xor(slice: &[u8]) -> Vec<u8> {
+    let key = find_single_byte_key(slice);
+    single_byte_xor(key)(slice)
+}
+
+fn find_single_byte_key(slice: &[u8]) -> u8 {
+    score_single_byte_keys_from(0..128)(slice)
+        .into_iter()
+        .max_by_key(|(score, _key)| *score)
+        .map(|(_score, key)| key)
+        .expect("Can't find key from empty slice.")
+}
+
+fn score_single_byte_keys_from(range: std::ops::Range<u8>) -> impl Fn(&[u8]) -> Vec<(i32, u8)> {
     let weight_scores = weights();
-    (0..128) // Assuming the key is only within the ascii range
-        .map(|key| {
-            let decrypted_slice: Vec<u8> = single_byte_xor(key)(slice);
-            let score = weight_scores(byte_frequency(&decrypted_slice));
-            (score, key, decrypted_slice)
-        })
-        .max_by_key(|(score, _key, _slice)| *score)
+
+    move |slice| {
+        (range.clone())
+            .map(|key| {
+                let decrypted_slice: Vec<u8> = single_byte_xor(key)(slice);
+                let score = weight_scores(byte_frequency(&decrypted_slice));
+                (score, key)
+            })
+            .collect()
+    }
 }
 
 pub fn decrypt_repeating_key_xor(slice: &[u8]) -> Vec<u8> {
@@ -37,27 +53,43 @@ pub fn decrypt_repeating_key_xor(slice: &[u8]) -> Vec<u8> {
     repeating_key_xor(&key)(slice)
 }
 
-pub fn find_single_byte_xor_lines(lines: &[Vec<u8>]) -> Vec<(usize, (i32, u8, Vec<u8>))> {
+pub fn detect_single_byte_xor_line(lines: &[Vec<u8>]) -> (usize, u8) {
+    find_single_byte_xor_lines(lines)
+        .iter()
+        .max_by_key(|(_index, score, _key)| *score)
+        .map(|(index, _score, key)| (*index, *key))
+        .unwrap()
+}
+
+fn find_single_byte_xor_lines(lines: &[Vec<u8>]) -> Vec<(usize, i32, u8)> {
+    let score = score_single_byte_keys_from(0..128);
+    let key_with_highest_score = |(index, scores): (usize, Vec<(i32, u8)>)| {
+        let (score, key) = scores.into_iter().max_by_key(|(score, _)| *score).unwrap();
+        (index, score, key)
+    };
+
     lines
         .into_iter()
         .enumerate()
-        .map(|(index, slice)| (index, decrypt_single_byte_xor(slice)))
-        .filter(|(_index, option)| option.is_some())
-        .map(|(index, option)| (index, option.unwrap()))
+        .map(|(index, slice)| (index, score(slice)))
+        .map(key_with_highest_score)
         .collect()
 }
 
 pub fn find_key(slice: &[u8]) -> Vec<u8> {
-    let find_scores_for_range = find_key_size_score(2..41);
-    let key_size = top_key(&find_scores_for_range(&slice));
+    let find_key_scores = find_key_size_score(2..41);
+    let key_size = top_key(&find_key_scores(&slice));
 
+    find_multi_byte_key(key_size, slice)
+}
+
+fn find_multi_byte_key(key_size: usize, slice: &[u8]) -> Vec<u8> {
     let mut blocks = Blocks::from(key_size, slice);
     blocks.transpose();
 
     blocks
-        .chunk_into_iter()
-        .map(|block| decrypt_single_byte_xor(&block).unwrap())
-        .map(|(_score, key, _text)| key)
+        .into_iter()
+        .map(|block| find_single_byte_key(&block))
         .collect()
 }
 
@@ -89,21 +121,30 @@ mod test {
 
     #[test]
     fn _decrypt_single_byte_xor() {
-        let message =
-            b"Lorem Ipsum is simply dummy text of the printing and typesetting industry.".to_vec();
+        let message = b"Lorem Ipsum is simply dummy text of the printing and typesetting industry.";
         let key_range = 0..128;
 
         for key in key_range {
-            let message_copy = message.clone();
-            let secret = single_byte_xor(key)(&message_copy);
-            let (_score, found_key, actual) = decrypt_single_byte_xor(&secret).unwrap();
-
-            assert_eq!(key, found_key,);
+            let secret = single_byte_xor(key)(message);
+            let actual = decrypt_single_byte_xor(&secret);
 
             assert_eq!(
-                String::from_utf8(message_copy).unwrap(),
+                String::from_utf8(message.to_vec()).unwrap(),
                 String::from_utf8(actual).unwrap()
             );
+        }
+    }
+
+    #[test]
+    fn _find_single_byte_xor() {
+        let message = b"Lorem Ipsum is simply dummy text of the printing and typesetting industry.";
+        let key_range = 0..128;
+
+        for key in key_range {
+            let secret = single_byte_xor(key)(message);
+            let actual = find_single_byte_key(&secret);
+
+            assert_eq!(key, actual);
         }
     }
 

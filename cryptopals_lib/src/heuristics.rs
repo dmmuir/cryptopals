@@ -1,59 +1,59 @@
 use std::collections::HashMap;
 use std::hash::Hash;
 
-pub fn byte_frequency(slice: &[u8]) -> HashMap<&u8, f32> {
-    occurance_count(slice)
+pub fn byte_frequency(slice: &[u8]) -> HashMap<&u8, i32> {
+    occurrence_count(slice)
 }
 
 pub fn contain_duplicates(slice: &[Vec<u8>]) -> bool {
-    occurance_count(slice)
+    occurrence_count(slice)
         .iter()
-        .any(|(_key, value)| *value > 1.0)
+        .any(|(_key, value)| *value > 1)
 }
 
-fn occurance_count<T>(slice: &[T]) -> HashMap<&T, f32>
+fn occurrence_count<T>(slice: &[T]) -> HashMap<&T, i32>
 where
     T: Hash + Eq,
 {
     let mut hit_records = HashMap::new();
 
     slice.into_iter().for_each(|item| {
-        let counter = hit_records.entry(item).or_insert(0.0f32);
-        *counter += 1.0;
+        let counter = hit_records.entry(item).or_insert(0);
+        *counter += 1;
     });
 
     hit_records
 }
 
-pub fn weights() -> impl Fn(HashMap<&u8, f32>) -> i32 {
-    let weights: HashMap<u8, f32> = vec![
-        (b'a', 1.08167),
-        (b'b', 1.01482),
-        (b'c', 1.02782),
-        (b'd', 1.04253),
-        (b'e', 1.12702),
-        (b'f', 1.02228),
-        (b'g', 1.02015),
-        (b'h', 1.06094),
-        (b'i', 1.06094),
-        (b'j', 1.00153),
-        (b'k', 1.00772),
-        (b'l', 1.04025),
-        (b'm', 1.02406),
-        (b'n', 1.06749),
-        (b'o', 1.07507),
-        (b'p', 1.01929),
-        (b'q', 1.00095),
-        (b'r', 1.05987),
-        (b's', 1.06327),
-        (b't', 1.09056),
-        (b'u', 1.02758),
-        (b'v', 1.00978),
-        (b'w', 1.02360),
-        (b'x', 1.00150),
-        (b'y', 1.01974),
-        (b'z', 1.00074),
-        (b' ', 1.13000),
+pub fn weights() -> impl Fn(HashMap<&u8, i32>) -> i32 {
+    let weights: HashMap<u8, i32> = vec![
+        (b'a', 108_167),
+        (b'b', 101_482),
+        (b'c', 102_782),
+        (b'd', 104_253),
+        (b'e', 112_702),
+        (b'f', 102_228),
+        (b'g', 102_015),
+        (b'h', 106_094),
+        (b'i', 106_094),
+        (b'j', 100_153),
+        (b'k', 100_772),
+        (b'l', 104_025),
+        (b'm', 102_406),
+        (b'n', 106_749),
+        (b'o', 107_507),
+        (b'p', 101_929),
+        (b'q', 100_095),
+        (b'r', 105_987),
+        (b's', 106_327),
+        (b't', 109_056),
+        (b'u', 102_758),
+        (b'v', 100_978),
+        (b'w', 102_360),
+        (b'x', 100_150),
+        (b'y', 101_974),
+        (b'z', 100_074),
+        (b' ', 113_000),
     ]
     .into_iter()
     .collect();
@@ -61,32 +61,12 @@ pub fn weights() -> impl Fn(HashMap<&u8, f32>) -> i32 {
     move |hit_records| {
         hit_records
             .iter()
-            .map(|(byte, hits)| {
-                *weights.get(&byte.to_ascii_lowercase()).unwrap_or(&1.00) * hits * 100.00
-            })
-            .sum::<f32>()
-            .round() as i32
+            .map(|(byte, hits)| *weights.get(&byte.to_ascii_lowercase()).unwrap_or(&1) * hits)
+            .sum()
     }
 }
 
 pub fn find_key_size_score(range: std::ops::Range<usize>) -> impl Fn(&[u8]) -> Vec<(usize, u32)> {
-    let normalize_distance = |slice: &[u8], key_size| -> u32 {
-        let blocks_i: Vec<&[u8]> = slice.chunks(key_size).collect();
-        let mut i = 0;
-        blocks_i
-            .windows(2)
-            .map(|blocks| {
-                if blocks[0].len() == blocks[1].len() {
-                    i += 2;
-                    (1000 * hamm_distance(blocks[0], blocks[1])) / key_size as u32
-                } else {
-                    0
-                }
-            })
-            .sum::<u32>()
-            / i as u32
-    };
-
     move |slice: &[u8]| {
         (range)
             .clone()
@@ -113,7 +93,27 @@ pub fn top_n_keys(n: usize, key_sizes: &[(usize, u32)]) -> Vec<usize> {
 pub fn hamm_distance(a: &[u8], b: &[u8]) -> u32 {
     a.iter()
         .zip(b.iter())
-        .fold(0u32, |d, (a, b)| d + (a ^ b).count_ones())
+        .map(|(a, b)| (a ^ b).count_ones())
+        .sum()
+}
+
+fn normalize_distance(slice: &[u8], key_size: usize) -> u32 {
+    let blocks: Vec<&[u8]> = slice.chunks(key_size).collect();
+
+    let nd: Vec<u32> = blocks
+        .windows(2)
+        .map(|chunks| {
+            if chunks[0].len() == chunks[1].len() {
+                Some(1000 * hamm_distance(chunks[0], chunks[1]) / key_size as u32)
+            } else {
+                None
+            }
+        })
+        .filter_map(|norm_distance| norm_distance)
+        .collect();
+
+    let divisor = nd.len() as u32;
+    nd.iter().sum::<u32>() / divisor
 }
 
 #[cfg(test)]
@@ -123,38 +123,38 @@ mod test {
 
     #[test]
     fn _weight_scores() {
-        fn slice_from(tuple: (&u8, f32)) -> HashMap<&u8, f32> {
+        fn slice_from(tuple: (&u8, i32)) -> HashMap<&u8, i32> {
             vec![tuple].into_iter().collect()
         };
         let weight_scores = weights();
 
-        assert_eq!(108i32, weight_scores(slice_from((&b'a', 1.0f32))));
-        assert_eq!(101i32, weight_scores(slice_from((&b'b', 1.0f32))));
-        assert_eq!(103i32, weight_scores(slice_from((&b'c', 1.0f32))));
-        assert_eq!(104i32, weight_scores(slice_from((&b'd', 1.0f32))));
-        assert_eq!(113i32, weight_scores(slice_from((&b'e', 1.0f32))));
-        assert_eq!(102i32, weight_scores(slice_from((&b'f', 1.0f32))));
-        assert_eq!(102i32, weight_scores(slice_from((&b'g', 1.0f32))));
-        assert_eq!(106i32, weight_scores(slice_from((&b'h', 1.0f32))));
-        assert_eq!(106i32, weight_scores(slice_from((&b'i', 1.0f32))));
-        assert_eq!(100i32, weight_scores(slice_from((&b'j', 1.0f32))));
-        assert_eq!(101i32, weight_scores(slice_from((&b'k', 1.0f32))));
-        assert_eq!(104i32, weight_scores(slice_from((&b'l', 1.0f32))));
-        assert_eq!(102i32, weight_scores(slice_from((&b'm', 1.0f32))));
-        assert_eq!(107i32, weight_scores(slice_from((&b'n', 1.0f32))));
-        assert_eq!(108i32, weight_scores(slice_from((&b'o', 1.0f32))));
-        assert_eq!(102i32, weight_scores(slice_from((&b'p', 1.0f32))));
-        assert_eq!(100i32, weight_scores(slice_from((&b'q', 1.0f32))));
-        assert_eq!(106i32, weight_scores(slice_from((&b'r', 1.0f32))));
-        assert_eq!(106i32, weight_scores(slice_from((&b's', 1.0f32))));
-        assert_eq!(109i32, weight_scores(slice_from((&b't', 1.0f32))));
-        assert_eq!(103i32, weight_scores(slice_from((&b'u', 1.0f32))));
-        assert_eq!(101i32, weight_scores(slice_from((&b'v', 1.0f32))));
-        assert_eq!(102i32, weight_scores(slice_from((&b'w', 1.0f32))));
-        assert_eq!(100i32, weight_scores(slice_from((&b'x', 1.0f32))));
-        assert_eq!(102i32, weight_scores(slice_from((&b'y', 1.0f32))));
-        assert_eq!(100i32, weight_scores(slice_from((&b'z', 1.0f32))));
-        assert_eq!(113i32, weight_scores(slice_from((&b' ', 1.0f32))));
+        assert_eq!(108_167, weight_scores(slice_from((&b'a', 1))));
+        assert_eq!(101_482, weight_scores(slice_from((&b'b', 1))));
+        assert_eq!(102_782, weight_scores(slice_from((&b'c', 1))));
+        assert_eq!(104_253, weight_scores(slice_from((&b'd', 1))));
+        assert_eq!(112_702, weight_scores(slice_from((&b'e', 1))));
+        assert_eq!(102_228, weight_scores(slice_from((&b'f', 1))));
+        assert_eq!(102_015, weight_scores(slice_from((&b'g', 1))));
+        assert_eq!(106_094, weight_scores(slice_from((&b'h', 1))));
+        assert_eq!(106_094, weight_scores(slice_from((&b'i', 1))));
+        assert_eq!(100_153, weight_scores(slice_from((&b'j', 1))));
+        assert_eq!(100_772, weight_scores(slice_from((&b'k', 1))));
+        assert_eq!(104_025, weight_scores(slice_from((&b'l', 1))));
+        assert_eq!(102_406, weight_scores(slice_from((&b'm', 1))));
+        assert_eq!(106_749, weight_scores(slice_from((&b'n', 1))));
+        assert_eq!(107_507, weight_scores(slice_from((&b'o', 1))));
+        assert_eq!(101_929, weight_scores(slice_from((&b'p', 1))));
+        assert_eq!(100_095, weight_scores(slice_from((&b'q', 1))));
+        assert_eq!(105_987, weight_scores(slice_from((&b'r', 1))));
+        assert_eq!(106_327, weight_scores(slice_from((&b's', 1))));
+        assert_eq!(109_056, weight_scores(slice_from((&b't', 1))));
+        assert_eq!(102_758, weight_scores(slice_from((&b'u', 1))));
+        assert_eq!(100_978, weight_scores(slice_from((&b'v', 1))));
+        assert_eq!(102_360, weight_scores(slice_from((&b'w', 1))));
+        assert_eq!(100_150, weight_scores(slice_from((&b'x', 1))));
+        assert_eq!(101_974, weight_scores(slice_from((&b'y', 1))));
+        assert_eq!(100_074, weight_scores(slice_from((&b'z', 1))));
+        assert_eq!(113_000, weight_scores(slice_from((&b' ', 1))));
     }
 
     #[test]

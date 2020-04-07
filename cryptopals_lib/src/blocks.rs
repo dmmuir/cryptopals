@@ -29,7 +29,7 @@ impl Blocks {
         self.n_m = (m, n);
     }
 
-    pub fn chunk_into_iter(&self) -> IntoIter<Vec<u8>> {
+    pub fn into_iter(&self) -> IntoIter<Vec<u8>> {
         self.chunk_slice().into_iter()
     }
 
@@ -85,7 +85,7 @@ mod test {
             let a: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
             let expected: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6], vec![7, 8, 9]];
 
-            let mut actual = Blocks::from(3, &a).chunk_into_iter();
+            let mut actual = Blocks::from(3, &a).into_iter();
 
             assert_eq!(Some(expected[0].to_owned()), actual.next());
             assert_eq!(Some(expected[1].to_owned()), actual.next());
@@ -97,7 +97,7 @@ mod test {
             let a: Vec<u8> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
             let expected: Vec<Vec<u8>> = vec![vec![1, 2, 3, 4], vec![5, 6, 7, 8], vec![9]];
 
-            let mut actual = Blocks::from(4, &a).chunk_into_iter();
+            let mut actual = Blocks::from(4, &a).into_iter();
 
             assert_eq!(Some(expected[0].to_owned()), actual.next());
             assert_eq!(Some(expected[1].to_owned()), actual.next());

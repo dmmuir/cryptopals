@@ -47,7 +47,7 @@ mod set1 {
             let slice = hex::decode(
                 b"1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736",
             );
-            let (_score, _key, actual) = xor::decrypt_single_byte_xor(&slice).unwrap();
+            let actual = xor::decrypt_single_byte_xor(&slice);
 
             assert_eq!(
                 String::from("Cooking MC's like a pound of bacon"),
@@ -62,7 +62,8 @@ mod set1 {
         #[test]
         fn detect_single_character_xor() {
             let slice = hex::decode(b"7b5a4215415d544115415d5015455447414c155c46155f4058455c5b52");
-            let (_index, (_score, _key, actual)) = &xor::find_single_byte_xor_lines(&[slice])[0];
+            let (_index, key) = &xor::detect_single_byte_xor_line(&[slice.clone()]);
+            let actual = xor::single_byte_xor(*key)(&slice);
 
             assert_eq!(
                 String::from("Now that the party is jumping"),
