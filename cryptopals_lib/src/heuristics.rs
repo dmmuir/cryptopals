@@ -123,7 +123,9 @@ mod test {
 
     #[test]
     fn _weight_scores() {
-        fn slice_from(tuple: (&u8, f32)) -> HashMap<&u8, f32> { vec![tuple].into_iter().collect() };
+        fn slice_from(tuple: (&u8, f32)) -> HashMap<&u8, f32> {
+            vec![tuple].into_iter().collect()
+        };
         let weight_scores = weights();
 
         assert_eq!(108i32, weight_scores(slice_from((&b'a', 1.0f32))));
