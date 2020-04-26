@@ -120,16 +120,6 @@ mod set1 {
                 xor::decrypt_repeating_key_xor(&message),
             );
         }
-
-        fn _file_reader(path: &str) -> Vec<u8> {
-            use std::io::BufRead;
-            let file = std::fs::File::open(path).unwrap();
-
-            std::io::BufReader::new(file)
-                .lines()
-                .flat_map(|result| result.expect("Failed to read line.").as_bytes().to_owned())
-                .collect()
-        }
     }
 }
 
@@ -151,4 +141,29 @@ mod set2 {
             assert_eq!(expected_padding.to_vec(), actual_padding);
         }
     }
+
+    mod challenge10 {
+        use super::*;
+
+        #[test]
+        fn _cbc_mode_decrypt() {
+            let data = base64::decode(&_file_reader("../challenge-data/10.txt"));
+            let key = b"YELLOW SUBMARINE";
+            let iv = vec![b'0'; 16];
+            
+            let secret = cipher::cbc_mode_decrypt(&data, key, &iv);
+            let message = cipher::cbc_mode_encrypt(&secret, key, &iv);
+            assert_eq!(data.to_vec(), message)
+        }
+    }
+}
+
+fn _file_reader(path: &str) -> Vec<u8> {
+    use std::io::BufRead;
+    let file = std::fs::File::open(path).unwrap();
+
+    std::io::BufReader::new(file)
+        .lines()
+        .flat_map(|result| result.expect("Failed to read line.").as_bytes().to_owned())
+        .collect()
 }

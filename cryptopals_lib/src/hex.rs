@@ -1,21 +1,22 @@
 const HEX_CHARS: &'static [u8] = b"0123456789abcdef";
 
 pub fn encode(bytes: &[u8]) -> Vec<u8> {
-    let encoder = encode_with(bytes.len());
-    encoder(bytes)
-}
-
-pub fn encode_with(buffer_len: usize) -> impl Fn(&[u8]) -> Vec<u8> {
-    fn hex(byte: u8) -> u8 {
-        HEX_CHARS[byte as usize]
-    }
-
     fn allocate_buffer(len: usize) -> Vec<u8> {
         Vec::with_capacity(len * 2)
     }
 
+    let buffer = allocate_buffer(bytes.len());
+    let encoder = encode_with(buffer);
+    encoder(bytes)
+}
+
+pub fn encode_with(buffer: Vec<u8>) -> impl Fn(&[u8]) -> Vec<u8> {
+    fn hex(byte: u8) -> u8 {
+        HEX_CHARS[byte as usize]
+    }
+    
     move |bytes| -> Vec<u8> {
-        let mut buffer = allocate_buffer(buffer_len);
+        let mut buffer = buffer.clone();
         let split_bytes = |byte: &u8| {
             buffer.push(hex((*byte >> 4) & 0xf));
             buffer.push(hex(*byte & 0xf));

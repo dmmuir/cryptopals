@@ -8,8 +8,8 @@ pub struct Blocks {
 }
 
 enum States {
-    ORIGINAL,
-    TRANSPOSED,
+    Original,
+    Transposed,
 }
 
 impl Blocks {
@@ -22,13 +22,13 @@ impl Blocks {
             slice,
             n_m,
             padding_length,
-            state: States::ORIGINAL,
+            state: States::Original,
         }
     }
 
     pub fn with_padding_from(block_size: usize, slice: &[u8]) -> Self {
-        let pad_char = 4u8;
         let padding_length = calculate_padding_length(block_size, slice.len());
+        let pad_char = padding_length as u8;
         let padded_slice = vec![pad_char; padding_length];
         let padded_slice = [slice, &padded_slice].concat();
 
@@ -47,24 +47,28 @@ impl Blocks {
         }
         self.slice = new_blocks;
         self.n_m = (m, n);
-        self.state = States::TRANSPOSED
+        self.state = States::Transposed
     }
 
-    pub fn into_iter(&self) -> IntoIter<Vec<u8>> {
+    pub fn into_iter(self) -> IntoIter<Vec<u8>> {
         self.chunk_slice().into_iter()
     }
 
-    pub fn chunk_slice(&self) -> Vec<Vec<u8>> {
+    pub fn chunk_slice(self) -> Vec<Vec<u8>> {
         let (n, _) = self.n_m;
         self.slice
             .chunks(n)
             .into_iter()
             .enumerate()
             .map(|(index, chunk)| match self.state {
-                States::ORIGINAL => chunk.to_owned(),
-                States::TRANSPOSED => self.remove_padding(index, chunk),
+                States::Original => chunk.to_owned(),
+                States::Transposed => self.remove_padding(index, chunk),
             })
             .collect()
+    }
+
+    pub fn to_slice(self) -> Vec<u8> {
+        self.slice
     }
 
     fn remove_padding(&self, index: usize, block: &[u8]) -> Vec<u8> {

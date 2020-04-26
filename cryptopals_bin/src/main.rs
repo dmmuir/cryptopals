@@ -24,6 +24,8 @@ fn main() {
     println!("Set 1 - Challenge 8: {}", detect_ecb_mode_encryption());
     
     println!("Set 2 - Challenge 9: {}", pad_yellow_submarine());
+    
+    println!("Set 2 - Challenge 10: {}", cbc_mode_decryption());
 }
 
 fn hex_decode_secret() -> String {
@@ -87,7 +89,7 @@ fn detect_ecb_mode_encryption() -> String {
     let lines = file_read("./challenge-data/8.txt", hex_decoder);
     let hits = cipher::detect_ecb_mode_encryption(&lines);
     if let Some((line_number, _line)) = hits.first() {
-        return format!("{}", line_number);
+        return format!("{}", line_number + 1);
     }
 
     String::new()
@@ -99,6 +101,17 @@ fn pad_yellow_submarine() -> String {
     let padded_bytes: Vec<u8> = blocks.into_iter().flatten().collect();
 
     String::from_utf8(padded_bytes).unwrap()
+}
+
+fn cbc_mode_decryption() -> String {
+    let base64_decoder = |file: String| base64::decode(file.as_bytes());
+    let data = file_read_string("./challenge-data/10.txt", base64_decoder);
+    let key = b"YELLOW SUBMARINE";
+    let iv = vec![b'0'; 16];
+
+    let message = cipher::cbc_mode_decrypt(&data, key, &iv);
+
+    String::from_utf8(message).unwrap()
 }
 
 fn hex_decode(bytes: &[u8]) -> String {
