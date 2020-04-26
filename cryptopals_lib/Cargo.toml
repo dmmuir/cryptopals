@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 openssl = "0.10"
+rand = "0.7"
 
 [dev-dependencies]
 base64 = "0.12"

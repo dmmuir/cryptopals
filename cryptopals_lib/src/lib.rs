@@ -3,6 +3,7 @@ pub mod blocks;
 pub mod cipher;
 pub mod heuristics; // TODO: Module needs a better name
 pub mod hex;
+pub mod witchcraft;
 pub mod xor;
 
 #[cfg(test)]
