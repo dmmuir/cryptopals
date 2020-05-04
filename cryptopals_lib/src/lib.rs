@@ -3,7 +3,7 @@ pub mod blocks;
 pub mod cipher;
 pub mod heuristics; // TODO: Module needs a better name
 pub mod hex;
-pub mod witchcraft;
+pub mod oracle;
 pub mod xor;
 
 #[cfg(test)]
@@ -127,7 +127,7 @@ mod set1 {
 #[cfg(test)]
 mod set2 {
     use super::*;
-    
+
     mod challenge9 {
         use super::*;
 
@@ -151,7 +151,7 @@ mod set2 {
             let data = base64::decode(&_file_reader("../challenge-data/10.txt"));
             let key = b"YELLOW SUBMARINE";
             let iv = vec![b'0'; 16];
-            
+
             let secret = cipher::cbc_mode_decrypt(&data, key, &iv);
             let message = cipher::cbc_mode_encrypt(&secret, key, &iv);
             assert_eq!(data.to_vec(), message)

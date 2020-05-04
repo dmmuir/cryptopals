@@ -14,7 +14,7 @@ pub fn encode_with(buffer: Vec<u8>) -> impl Fn(&[u8]) -> Vec<u8> {
     fn hex(byte: u8) -> u8 {
         HEX_CHARS[byte as usize]
     }
-    
+
     move |bytes| -> Vec<u8> {
         let mut buffer = buffer.clone();
         let split_bytes = |byte: &u8| {

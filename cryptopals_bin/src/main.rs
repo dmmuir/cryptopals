@@ -1,10 +1,6 @@
 extern crate cryptopals_lib as lib;
 
-use lib::base64;
-use lib::blocks;
-use lib::cipher;
-use lib::hex;
-use lib::xor;
+use lib::{base64, blocks, cipher, hex, oracle, xor};
 
 fn main() {
     println!("Set 1 - Challenge 1: {}", hex_decode_secret());
@@ -22,10 +18,14 @@ fn main() {
     println!("Set 1 - Challenge 7: {}", decrypt_aes_128_in_ecb_mode());
 
     println!("Set 1 - Challenge 8: {}", detect_ecb_mode_encryption());
-    
+
     println!("Set 2 - Challenge 9: {}", pad_yellow_submarine());
-    
+
     println!("Set 2 - Challenge 10: {}", cbc_mode_decryption());
+
+    println!("Set 2 - Challenge 11: {}", detection_oracle());
+
+    println!("Set 2 - Challenge 12: {}", simple_ecb_decryption());
 }
 
 fn hex_decode_secret() -> String {
@@ -111,6 +111,22 @@ fn cbc_mode_decryption() -> String {
 
     let message = cipher::cbc_mode_decrypt(&data, key, &iv);
 
+    String::from_utf8(message).unwrap()
+}
+
+fn detection_oracle() -> String {
+    let data = b"Figuring to decrypt ecb mode encryption with key and back again!Figuring to decrypt ecb mode encryption with key and back again!"; // 64 bytes long -> 4 blocks of 16 bytes
+    let secret = oracle::encryption_oracle(data);
+
+    cipher::detect_encryption_mode(&secret).to_string()
+}
+
+fn simple_ecb_decryption() -> String {
+    let data = b"Figuring to decrypt ecb mode encryption with key and back again!Figuring to decrypt ecb mode encryption with key and back again!";
+    let unknown_string = crate::base64::decode(b"Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK");
+
+    let oracle = oracle::ecb_encryption_oracle_generator(&unknown_string);
+    let message = cipher::aes_128_ecb_decrypt(&oracle, &oracle(data));
     String::from_utf8(message).unwrap()
 }
 
